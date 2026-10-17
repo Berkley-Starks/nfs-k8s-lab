@@ -66,11 +66,11 @@ Validated on 2026-10-17 using Go 1.26.9 on Ubuntu 26.04 under WSL 2:
 - The Linux amd64 development build passed using vendored dependencies and
   produced `bin/amd64/nfsplugin`. It omits upstream release-version linker metadata.
 
-Full cluster tests additionally require a container runtime or a Linux Kubernetes
-cluster, the Kubernetes CLI and Helm, and an NFS server or test deployment.
-The intended sequence is a small dedicated lab reproduction, followed by AWS
-scale testing with the same workload and assertions. Actual host inventories,
-account details, and credentials are maintained outside this public repository.
+The [small-lab recipe](../../environments/small-lab/README.md) provides the next
+step: a dedicated two-node Kubernetes cluster with a released driver and an NFS
+export. Follow it with an issue-specific reproduction, then AWS scale testing
+using the same workload and assertions. Actual host inventories, account details,
+and credentials are maintained outside this public repository.
 
 ## Cleanup
 

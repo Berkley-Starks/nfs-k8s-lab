@@ -1,5 +1,8 @@
 # Local configuration
 .env
+/private/
+/artifacts/
+*.kubeconfig
 .env.*
 !.env.example
 

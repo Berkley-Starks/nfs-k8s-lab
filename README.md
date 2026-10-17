@@ -16,6 +16,9 @@ Open `nfs-k8s.code-workspace` in VS Code to work with this lab and the sibling
 `csi-driver-nfs` checkout. See the [driver baseline](investigations/csi-driver-nfs-baseline/README.md)
 for WSL setup, build commands, unit tests, and the contribution workflow.
 
+The [small-lab recipe](environments/small-lab/README.md) covers a dedicated
+two-node Kubernetes cluster, NFS CSI installation, and a shared-volume smoke test.
+
 Validate a minimal reproduction in a small, isolated Linux lab first. Once it
 reliably fails on the baseline and passes with the fix, repeat the same workload
 at increasing scale in AWS. Record the versions, workload parameters, results,
