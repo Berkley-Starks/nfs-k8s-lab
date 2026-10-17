@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deploy the released NFS CSI driver and exercise a dedicated two-node lab."""
+"""Deploy an NFS CSI driver build and exercise a dedicated two-node lab."""
 
 import argparse
 import datetime
@@ -73,7 +73,7 @@ def deploy():
         raise RuntimeError(f"Missing released chart: {chart}")
     print(run(["helm", "upgrade", "--install", "csi-driver-nfs", str(chart),
                "--kubeconfig", required("KUBECONFIG"), "--kube-context", required("KUBE_CONTEXT"),
-               "--namespace", "kube-system", "--values", "-", "--wait", "--timeout", "5m"],
+               "--namespace", "kube-system", "--reset-values", "--values", "-", "--wait", "--timeout", "5m"],
               json.dumps(values)))
     for kind in ["deployment/csi-nfs-controller", "daemonset/csi-nfs-node"]:
         print(kubectl("rollout", "status", "-n", "kube-system", kind, "--timeout=180s"))

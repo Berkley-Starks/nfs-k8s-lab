@@ -34,8 +34,16 @@ fi
 
 version='v1.35.9+k3s1'
 export DEBIAN_FRONTEND=noninteractive
-apt-get update
-apt-get install -y ca-certificates curl nfs-common
+missing=()
+for package in ca-certificates curl nfs-common; do
+  if ! dpkg-query -W -f='${Status}' "$package" 2>/dev/null | grep -qx 'install ok installed'; then
+    missing+=("$package")
+  fi
+done
+if (( ${#missing[@]} )); then
+  apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 update
+  apt-get install -y "${missing[@]}"
+fi
 install -d -m 700 /etc/rancher/k3s
 umask 077
 cat > /etc/rancher/k3s/config.yaml <<EOF
@@ -63,7 +71,7 @@ EOF
 fi
 installer=$(mktemp)
 trap 'rm -f "$installer"' EXIT
-curl --fail --location --retry 3 \
+curl --fail --location --retry 3 --connect-timeout 15 --max-time 120 \
   "https://raw.githubusercontent.com/k3s-io/k3s/$version/install.sh" -o "$installer"
 # The tagged installer checks the release binary against its published checksum.
 INSTALL_K3S_VERSION=$version INSTALL_K3S_EXEC=$role sh "$installer"
