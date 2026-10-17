@@ -1,0 +1,16 @@
+# Local configuration
+.env
+.env.*
+!.env.example
+
+# Local output
+*.log
+
+# Python tooling
+__pycache__/
+.venv/
+.pytest_cache/
+
+# Operating system files
+.DS_Store
+Thumbs.db
