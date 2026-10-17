@@ -1,0 +1,3 @@
+# Keep the released runtime and replace only the driver binary for comparisons.
+FROM registry.k8s.io/sig-storage/nfsplugin:v4.13.5@sha256:19162ec4fb3f56a7e53f578721b0d5b8e9c691c27d2789aecb17e9de60a94595
+COPY bin/amd64/nfsplugin /nfsplugin

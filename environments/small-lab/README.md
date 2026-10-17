@@ -101,10 +101,37 @@ Kubernetes and kernel versions, NFS mount options, workload parameters, and
 pass/fail assertions. Keep raw outputs private and publish a short result with
 hostnames, endpoints, account details, and identifiers removed.
 
-The initial cluster check uses the released driver. The development binary built
-with `scripts/driver.sh build` is a separate artifact; it is not deployed by this
-recipe. For an issue, build a container from the selected source commit, record
-its digest, and run the same test on the baseline and proposed fix.
+## Test a source build
+
+The initial cluster check uses the released driver. To test the sibling checkout,
+build a Linux amd64 image on a host with Docker. The helper uses a Go container
+to cross-compile the driver, then replaces `/nfsplugin` in the released image.
+This works on amd64 and arm64 Docker hosts without amd64 emulation. It keeps
+runtime dependencies the same across comparisons; changes to those dependencies
+need a separate build using the upstream Dockerfile.
+
+```sh
+export NFS_IMAGE="nfs-lab/nfsplugin:git-$(git -C "$CSI_DRIVER_DIR" rev-parse --short=12 HEAD)"
+bash scripts/driver-image.sh
+docker save "$NFS_IMAGE" -o /private/path/nfsplugin.tar
+```
+
+Use a fresh tag for each build; add a suffix when the worktree contains changes.
+Record those changes with the test result. Transfer the archive to **both** lab
+nodes and import it on each one as root:
+
+```sh
+k3s ctr images import /private/path/nfsplugin.tar
+```
+
+With `NFS_IMAGE` still set on the management host, run `lab.py deploy` and
+`lab.py smoke` again. This selects `charts/latest` from the same source checkout
+and sets the driver image pull policy to `Never`, so a missing local image fails
+visibly. It does not publish the image to a registry. Record the actual image ID,
+source commit, and chart commit for both baseline and fix. These development
+builds omit upstream release-version linker metadata.
+
+To restore the released driver, unset `NFS_IMAGE` and run `lab.py deploy` again.
 
 ## Move a reproduction to AWS
 

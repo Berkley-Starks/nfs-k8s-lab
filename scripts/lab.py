@@ -41,7 +41,7 @@ def get(*args):
     return json.loads(kubectl("get", *args, "-o", "json"))
 
 
-def preflight():
+def preflight(require_ready=True):
     lab_id = required("LAB_ID")
     nodes = [required("LAB_NODE_A"), required("LAB_NODE_B")]
     if len(set(nodes)) != 2:
@@ -53,7 +53,7 @@ def preflight():
         labels = node["metadata"].get("labels", {})
         ready = any(c["type"] == "Ready" and c["status"] == "True"
                     for c in node["status"]["conditions"])
-        if labels.get(LABEL) != lab_id or labels.get("kubernetes.io/os") != "linux" or not ready:
+        if labels.get(LABEL) != lab_id or labels.get("kubernetes.io/os") != "linux" or (require_ready and not ready):
             raise RuntimeError(f"Node {node['metadata']['name']} is not a Ready Linux member of {lab_id}")
     return nodes
 
@@ -61,13 +61,20 @@ def preflight():
 def deploy():
     preflight()
     source = Path(required("CSI_DRIVER_DIR"))
-    chart = source / "charts" / DRIVER_VERSION / "csi-driver-nfs"
+    image = os.environ.get("NFS_IMAGE")
+    values = {"controller": {"enableSnapshotter": False}, "externalSnapshotter": {"enabled": False}}
+    if image:
+        repository, separator, tag = image.rpartition(":")
+        if not separator or not repository or not re.fullmatch(r"[a-zA-Z0-9_.-]+", tag):
+            raise RuntimeError("NFS_IMAGE must include an explicit repository and tag")
+        values["image"] = {"nfs": {"repository": repository, "tag": tag, "pullPolicy": "Never"}}
+    chart = source / "charts" / ("latest" if image else DRIVER_VERSION) / "csi-driver-nfs"
     if not (chart / "Chart.yaml").is_file():
         raise RuntimeError(f"Missing released chart: {chart}")
     print(run(["helm", "upgrade", "--install", "csi-driver-nfs", str(chart),
                "--kubeconfig", required("KUBECONFIG"), "--kube-context", required("KUBE_CONTEXT"),
-               "--namespace", "kube-system", "--set", "controller.enableSnapshotter=false",
-               "--set", "externalSnapshotter.enabled=false", "--wait", "--timeout", "5m"]))
+               "--namespace", "kube-system", "--values", "-", "--wait", "--timeout", "5m"],
+              json.dumps(values)))
     for kind in ["deployment/csi-nfs-controller", "daemonset/csi-nfs-node"]:
         print(kubectl("rollout", "status", "-n", "kube-system", kind, "--timeout=180s"))
 
@@ -110,16 +117,25 @@ def cleanup(namespace):
     if not re.fullmatch(r"nfs-smoke-[a-z0-9-]+", namespace):
         raise RuntimeError("Cleanup accepts only an nfs-smoke-* run name")
     owned = {LABEL: required("LAB_ID"), "app.kubernetes.io/managed-by": "nfs-k8s-lab"}
+    existing = set()
     for kind in ["namespace", "storageclass"]:
-        obj = get(kind, namespace)
+        output = kubectl("get", kind, namespace, "--ignore-not-found", "-o", "json")
+        if not output:
+            continue
+        obj = json.loads(output)
         if any(obj["metadata"].get("labels", {}).get(k) != v for k, v in owned.items()):
             raise RuntimeError(f"Refusing to delete {kind}/{namespace}: ownership labels differ")
+        existing.add(kind)
     pvs = [pv["metadata"]["name"] for pv in get("pv")["items"]
            if pv["spec"].get("claimRef", {}).get("namespace") == namespace]
-    kubectl("delete", "namespace", namespace, "--wait=true", "--timeout=180s")
+    if pvs and not existing:
+        raise RuntimeError("PV remains but the run's ownership records are missing; inspect it manually")
+    if "namespace" in existing:
+        kubectl("delete", "namespace", namespace, "--wait=true", "--timeout=180s")
     for pv in pvs:
         kubectl("wait", "--for=delete", f"pv/{pv}", "--timeout=180s")
-    kubectl("delete", "storageclass", namespace)
+    if "storageclass" in existing:
+        kubectl("delete", "storageclass", namespace)
 
 
 def smoke():
@@ -181,7 +197,7 @@ def main():
     if args.command == "cleanup":
         if not args.run_name:
             parser.error("cleanup requires the failed run name")
-        preflight()
+        preflight(require_ready=False)
         cleanup(args.run_name)
     elif args.command == "deploy":
         deploy()
