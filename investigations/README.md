@@ -1,5 +1,8 @@
 # Investigations
 
+Start with the [NFS CSI driver baseline](csi-driver-nfs-baseline/README.md) for
+the prepared checkout, build tooling, and initial test results.
+
 Create a folder named `<project>-<issue-number>-<topic>` for each issue, or
 `<project>-<topic>` when no upstream issue exists yet.
 

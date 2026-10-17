@@ -1,0 +1,34 @@
+{
+  "folders": [
+    { "name": "lab", "path": "." },
+    { "name": "csi-driver-nfs", "path": "../csi-driver-nfs" }
+  ],
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "NFS: set up Go in WSL",
+        "type": "process",
+        "command": "wsl.exe",
+        "args": ["-d", "Ubuntu", "--cd", "${workspaceFolder:lab}", "--", "bash", "scripts/setup-go.sh"],
+        "problemMatcher": []
+      },
+      {
+        "label": "NFS: unit tests (WSL)",
+        "type": "process",
+        "command": "wsl.exe",
+        "args": ["-d", "Ubuntu", "--cd", "${workspaceFolder:lab}", "--", "bash", "scripts/driver.sh", "unit"],
+        "group": "test",
+        "problemMatcher": []
+      },
+      {
+        "label": "NFS: build driver (WSL)",
+        "type": "process",
+        "command": "wsl.exe",
+        "args": ["-d", "Ubuntu", "--cd", "${workspaceFolder:lab}", "--", "bash", "scripts/driver.sh", "build"],
+        "group": "build",
+        "problemMatcher": []
+      }
+    ]
+  }
+}

@@ -10,6 +10,17 @@ and developing tests and tools that support upstream contributions.
 - Regression tests, diagnostic tools, and technical notes.
 - Links to related upstream issues and pull requests.
 
+## Getting started
+
+Open `nfs-k8s.code-workspace` in VS Code to work with this lab and the sibling
+`csi-driver-nfs` checkout. See the [driver baseline](investigations/csi-driver-nfs-baseline/README.md)
+for WSL setup, build commands, unit tests, and the contribution workflow.
+
+Validate a minimal reproduction in a small, isolated Linux lab first. Once it
+reliably fails on the baseline and passes with the fix, repeat the same workload
+at increasing scale in AWS. Record the versions, workload parameters, results,
+and cleanup steps for both stages.
+
 ## Layout
 
 Use one folder per issue or investigation:
