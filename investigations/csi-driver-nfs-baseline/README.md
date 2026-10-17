@@ -72,6 +72,10 @@ export. Follow it with an issue-specific reproduction, then AWS scale testing
 using the same workload and assertions. Actual host inventories, account details,
 and credentials are maintained outside this public repository.
 
+The [2026-10-17 small-lab result](results/2026-10-17-small-lab.md) records two Ready
+nodes, a successful released-driver rollout, and working ownership checks.
+Volume lifecycle tests and source-image deployment remain pending.
+
 ## Cleanup
 
 The driver's generated binary is under `bin/amd64/nfsplugin` and unit-test

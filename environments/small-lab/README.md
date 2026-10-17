@@ -4,6 +4,9 @@ Use two dedicated Linux VMs and an NFS export to establish a working baseline.
 The control-plane node also runs test pods, so the smoke test can check shared
 access across two hosts without a third Kubernetes VM.
 
+See the [current validation results](../../investigations/csi-driver-nfs-baseline/results/2026-10-17-small-lab.md)
+for completed checks and the remaining volume tests.
+
 | Component | Baseline |
 | --- | --- |
 | Clients | Two Ubuntu 24.04 amd64 VMs, 40 GiB root disks |
@@ -31,6 +34,20 @@ live inventories, credentials, kubeconfigs, and raw logs stay outside it.
 The NFS server should use a dedicated export that permits the clients to create
 and remove directories. A PVC's requested capacity does not establish an NFS
 server quota.
+
+For a Linux reference backend, run `scripts/lab-nfs-server.sh` as root on one
+of the dedicated clients:
+
+```sh
+NFS_CLIENTS="$CONTROL_IP $WORKER_IP" bash lab-nfs-server.sh
+```
+
+It exports `/srv/nfs-k8s-lab` to those two addresses with root squashing enabled.
+Set `NFS_SERVER` to that node's address and `NFS_SHARE=/` for the NFSv4 pseudo-root.
+The helper refuses to replace an existing export. It installs `nfs-kernel-server`
+using the node's package index; refresh that index if the package is unavailable.
+This shared-host topology is useful for functional checks. Use a separate NFS
+server when measuring performance or investigating server failures.
 
 ## Install Kubernetes
 
