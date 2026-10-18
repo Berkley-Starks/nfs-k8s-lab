@@ -72,11 +72,15 @@ export. Follow it with an issue-specific reproduction, then AWS scale testing
 using the same workload and assertions. Actual host inventories, account details,
 and credentials are maintained outside this public repository.
 
-The [2026-10-17 small-lab result](results/2026-10-17-small-lab.md) records two Ready
-nodes, a successful released-driver rollout, and working ownership checks.
-Lab access was subsequently lost. Provisioning then failed to resume after an
-orchestration restart. The original claim was retired on 2026-10-18. Volume
-lifecycle tests and source-image deployment remain pending on a replacement lab.
+The [2026-10-18 storage baseline](results/2026-10-18-small-lab.md) passed with both
+the released driver and the source build: dynamic provisioning, cross-node
+checksums, pod recreation, deliberate corruption detection, and cleanup of
+Kubernetes resources and server directories. The released driver is restored
+as the default baseline; the source image remains loaded on both nodes.
+
+The [2026-10-17 readiness check](results/2026-10-17-small-lab.md) covers the earlier
+cluster and ownership checks. That claim was retired before the replacement lab
+was provisioned and tested.
 
 ## Cleanup
 

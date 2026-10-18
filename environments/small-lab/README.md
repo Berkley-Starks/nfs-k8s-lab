@@ -4,8 +4,8 @@ Use two dedicated Linux VMs and an NFS export to establish a working baseline.
 The control-plane node also runs test pods, so the smoke test can check shared
 access across two hosts without a third Kubernetes VM.
 
-See the [current validation results](../../investigations/csi-driver-nfs-baseline/results/2026-10-17-small-lab.md)
-for completed checks and the remaining volume tests.
+See the [current validation results](../../investigations/csi-driver-nfs-baseline/results/2026-10-18-small-lab.md)
+for the released-driver and source-build storage checks.
 
 | Component | Baseline |
 | --- | --- |
@@ -39,6 +39,12 @@ live inventories, credentials, kubeconfigs, and raw logs stay outside it.
 The NFS server should use a dedicated export that permits the clients to create
 and remove directories. A PVC's requested capacity does not establish an NFS
 server quota.
+
+Verify the mounted export with `findmnt --mountpoint <path> -o TARGET,SOURCE,FSTYPE,OPTIONS`.
+Check the server, export path, filesystem type, and NFS version before writing
+test data. A failed mount can leave writes going to the client's local disk even
+when provisioning reports success. If the backend redirects clients to another
+endpoint, record the final mount source and confirm that it accepts NFSv4.1.
 
 For a Linux reference backend, run `scripts/lab-nfs-server.sh` as root on one
 of the dedicated clients:
