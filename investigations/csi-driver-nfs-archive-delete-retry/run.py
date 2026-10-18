@@ -2,6 +2,7 @@
 """Compare deletion retries in isolated pods on a dedicated two-node lab."""
 
 import argparse
+import copy
 import concurrent.futures
 import importlib.util
 import json
@@ -61,6 +62,7 @@ def main():
     parser.add_argument("--binary", required=True, type=Path, help="Linux amd64 repro binary")
     parser.add_argument("--expect", choices=["bug", "fixed"], required=True)
     parser.add_argument("--output", required=True, type=Path, help="Private JSON evidence path")
+    parser.add_argument("--fresh-controller", action="store_true", help="Retry through a separate driver process instead of waiting for cache expiry")
     args = parser.parse_args()
     nodes = lab.preflight()
     if args.output.exists():
@@ -89,14 +91,23 @@ def main():
     try:
         for index, remove_archive in enumerate([False, True]):
             name = "replace-" + str(remove_archive).lower()
-            lab.apply(pod(namespace, name, args.image, nodes[index], remove_archive))
+            manifest = pod(namespace, name, args.image, nodes[index], remove_archive)
+            if args.fresh_controller:
+                fresh = copy.deepcopy(manifest["spec"]["containers"][0])
+                fresh["name"] = "fresh-driver"
+                fresh["args"][0] = "--endpoint=unix:///csi/fresh.sock"
+                fresh["volumeMounts"][1]["name"] = "fresh-work"
+                manifest["spec"]["containers"].append(fresh)
+                manifest["spec"]["containers"][1]["env"].append({"name": "RETRY_ENDPOINT", "value": "unix:///csi/fresh.sock"})
+                manifest["spec"]["volumes"].append({"name": "fresh-work", "emptyDir": {}})
+            lab.apply(manifest)
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
             jobs = {name: executor.submit(exercise, name) for name in ["replace-false", "replace-true"]}
             for name, job in jobs.items():
                 outcomes[name] = job.result()
                 print(name, json.dumps(outcomes[name]), flush=True)
         args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(json.dumps({"image": args.image, "namespace": namespace,
+        args.output.write_text(json.dumps({"image": args.image, "namespace": namespace, "fresh_controller": args.fresh_controller,
                                           "expected": args.expect, "results": outcomes}, indent=2) + "\n")
         os.chmod(args.output, 0o600)
         for name, result in outcomes.items():

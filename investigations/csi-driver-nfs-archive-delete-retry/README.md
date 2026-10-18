@@ -11,6 +11,11 @@ The [lab results](results/2026-10-18.md) show the original build failing and
 the fixed build passing the same test. No upstream issue or PR has been opened
 for this investigation yet.
 
+The [adversarial review](adversarial/README.md) confirms the retry behavior and
+records a separate concurrent-delete bug: two independent controllers can
+still remove the archive when replacement is enabled. That race also affects
+the original code and is outside this patch's scope.
+
 ## Background
 
 [CSI DeleteVolume](https://github.com/container-storage-interface/spec/blob/master/spec.md#deletevolume)

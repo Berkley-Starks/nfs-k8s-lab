@@ -114,9 +114,22 @@ func run() error {
 	if err := deleteVolume(deleteID); err != nil {
 		return fmt.Errorf("first normal delete: %w", err)
 	}
-	fmt.Fprintln(os.Stderr, "First deletes, cached retry, and checksum negative control passed; waiting for cache expiry.")
-	time.Sleep(35 * time.Second)
-	time.Sleep(35 * time.Second)
+	waitSeconds := 70
+	retryMode := "cache-expiry"
+	if endpoint := os.Getenv("RETRY_ENDPOINT"); endpoint != "" {
+		freshConn, err := grpc.NewClient(endpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			return err
+		}
+		defer freshConn.Close()
+		client = csi.NewControllerClient(freshConn)
+		waitSeconds, retryMode = 0, "separate-process"
+		fmt.Fprintln(os.Stderr, "Retrying through a separate controller process with an empty cache.")
+	} else {
+		fmt.Fprintln(os.Stderr, "First deletes, cached retry, and checksum negative control passed; waiting for cache expiry.")
+		time.Sleep(35 * time.Second)
+		time.Sleep(35 * time.Second)
+	}
 	archiveErr := deleteVolume(archiveID)
 	deleteErr := deleteVolume(deleteID)
 	preserved := matches()
@@ -130,7 +143,8 @@ func run() error {
 		"normal_delete_absent":             os.IsNotExist(deletedErr),
 		"cached_retry_passed":              true,
 		"checksum_negative_control_passed": true,
-		"cache_wait_seconds":               70,
+		"cache_wait_seconds":               waitSeconds,
+		"retry_mode":                       retryMode,
 	}
 	// Remove only this run's two validated roots, after recording the observations.
 	for _, path := range []string{sourceRoot, archiveRoot} {
