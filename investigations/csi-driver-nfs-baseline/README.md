@@ -74,7 +74,9 @@ and credentials are maintained outside this public repository.
 
 The [2026-10-17 small-lab result](results/2026-10-17-small-lab.md) records two Ready
 nodes, a successful released-driver rollout, and working ownership checks.
-Volume lifecycle tests and source-image deployment remain pending.
+Lab access was subsequently lost. Provisioning then failed to resume after an
+orchestration restart. Volume lifecycle tests and source-image deployment await
+lab recovery.
 
 ## Cleanup
 
