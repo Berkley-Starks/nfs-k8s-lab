@@ -26,8 +26,13 @@ overlap existing routes before installing.
 
 Use the lab's provisioning workflow to create a separate environment. Keep a
 private record of its owner, claim ID, VM names, addresses, software build,
-expiration, and renewal/release commands. Confirm each machine's hostname and
-claim before configuring it; addresses may be reused after a claim expires.
+expiration, and renewal/release commands. Wait for provisioning and guest
+customization to finish successfully before installing Kubernetes. Automated
+retries can replace clients that were already reachable.
+
+Capture the final inventory, including VM identifiers, then confirm each
+machine's hostname and claim before configuring it. Addresses may be reused
+after a claim expires or its VMs are replaced.
 
 This repository contains the portable setup. Provider-specific provisioning,
 live inventories, credentials, kubeconfigs, and raw logs stay outside it.
